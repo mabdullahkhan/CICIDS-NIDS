@@ -1,0 +1,2640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CICIDS Intrusion Detection Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-elevated: #111827;
+      --bg-soft: #020617;
+      --text: #e5e7eb;
+      --text-muted: #9ca3af;
+      --primary: #3b82f6;
+      --primary-soft: rgba(59,130,246,0.12);
+      --border: #1f2937;
+      --danger: #ef4444;
+      --danger-soft: rgba(239,68,68,0.12);
+      --success: #22c55e;
+      --success-soft: rgba(34,197,94,0.12);
+      --warning: #eab308;
+      --warning-soft: rgba(234,179,8,0.12);
+      --critical: #f97316;
+      --critical-soft: rgba(249,115,22,0.12);
+      --shadow-soft: 0 10px 25px rgba(15,23,42,0.6);
+    }
+
+    .light {
+      --bg: #f3f4f6;
+      --bg-elevated: #ffffff;
+      --bg-soft: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --primary-soft: rgba(37,99,235,0.12);
+      --border: #d1d5db;
+      --shadow-soft: 0 6px 18px rgba(148,163,184,0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #1e293b 0, var(--bg) 40%, #020617 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    body.auth-mode {
+      background: radial-gradient(circle at top left, #1d4ed8 0, #020617 45%, #000 100%);
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+
+    input, select, button, textarea {
+      font-family: inherit;
+    }
+
+    /* Auth container */
+    .auth-container {
+      width: 100%;
+      max-width: 920px;
+      display: flex;
+      gap: 24px;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .auth-card {
+      flex: 1.1;
+      background: linear-gradient(145deg, rgba(15,23,42,0.96), rgba(15,23,42,0.96));
+      border-radius: 22px;
+      padding: 32px 32px 26px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(148,163,184,0.35);
+      backdrop-filter: blur(22px);
+    }
+
+    .auth-side {
+      flex: 0.9;
+      border-radius: 22px;
+      padding: 28px 26px;
+      background: radial-gradient(circle at 0 0, rgba(59,130,246,0.28), transparent 55%), radial-gradient(circle at 100% 100%, rgba(236,72,153,0.26), transparent 55%), linear-gradient(160deg, rgba(15,23,42,0.96), rgba(15,23,42,0.96));
+      color: #e5e7eb;
+      border: 1px solid rgba(59,130,246,0.5);
+      box-shadow: 0 24px 60px rgba(15,23,42,0.9);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-side::after {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(96,165,250,0.12) 0, transparent 52%),
+        radial-gradient(circle at 80% 80%, rgba(244,114,182,0.12) 0, transparent 52%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .auth-side-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .auth-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 4px 10px 4px 4px;
+      background: rgba(15,23,42,0.88);
+      border: 1px solid rgba(148,163,184,0.5);
+      margin-bottom: 20px;
+      backdrop-filter: blur(14px);
+    }
+
+    .auth-badge-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: conic-gradient(from 160deg, #22c55e, #22c55e, #22c55e, #16a34a, #22c55e, #22c55e);
+      padding: 3px;
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.5), 0 0 24px rgba(22,163,74,0.75);
+    }
+
+    .auth-badge-dot-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: radial-gradient(circle at 30% 30%, #dcfce7, #15803d 70%, #052e16 100%);
+    }
+
+    .auth-badge-text {
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .auth-brand {
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-size: 13px;
+      text-transform: uppercase;
+      color: #e5e7eb;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .auth-brand span.logo-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      background: radial-gradient(circle at 20% 20%, #bfdbfe, #1d4ed8 60%, #020617 100%);
+      box-shadow: 0 0 0 1px rgba(59,130,246,0.6), 0 0 18px rgba(59,130,246,0.9);
+    }
+
+    .auth-side h1 {
+      font-size: 26px;
+      margin-bottom: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .auth-side p {
+      font-size: 14px;
+      color: #cbd5f5;
+      margin-bottom: 18px;
+    }
+
+    .auth-pill-list {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .auth-pill {
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.5);
+      background: linear-gradient(145deg, rgba(15,23,42,0.96), rgba(15,23,42,0.96));
+      color: #e5e7eb;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .auth-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    .auth-metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .auth-metric {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,0.9);
+      background: radial-gradient(circle at 0 0, rgba(59,130,246,0.3), transparent 60%), radial-gradient(circle at 100% 100%, rgba(236,72,153,0.22), transparent 55%), linear-gradient(150deg, rgba(15,23,42,0.96), rgba(15,23,42,0.96));
+      box-shadow: 0 10px 24px rgba(15,23,42,0.85);
+    }
+
+    .auth-metric-label {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+
+    .auth-metric-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .auth-metric-chip {
+      margin-top: 6px;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(148,163,184,0.45);
+    }
+
+    .auth-metric-chip span.dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    .auth-footer-note {
+      margin-top: 18px;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .auth-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .auth-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    .auth-toggle-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 4px;
+    }
+
+    .auth-toggle-row button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .auth-toggle-row button span {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.8);
+      border: 1px solid rgba(148,163,184,0.6);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,0.9);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+
+    .light .form-input {
+      background: #f9fafb;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(59,130,246,0.45);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-row > .form-group {
+      flex: 1;
+    }
+
+    .form-footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+      margin-bottom: 14px;
+      font-size: 12px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checkbox-row input {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--primary);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.15s, box-shadow 0.15s, transform 0.08s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: white;
+      box-shadow: 0 14px 30px rgba(37,99,235,0.45);
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.05);
+      transform: translateY(-0.5px);
+      box-shadow: 0 18px 40px rgba(37,99,235,0.6);
+    }
+
+    .btn-ghost {
+      background: rgba(15,23,42,0.9);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(15,23,42,0.8);
+    }
+
+    .btn-link {
+      border: none;
+      background: none;
+      color: var(--primary);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .auth-switch-text {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .message {
+      font-size: 13px;
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .message-success {
+      background: var(--success-soft);
+      color: var(--success);
+      border: 1px solid rgba(34,197,94,0.7);
+    }
+
+    .message-error {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border: 1px solid rgba(239,68,68,0.7);
+    }
+
+    .auth-hint {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Dashboard layout */
+    .app-shell {
+      display: none;
+      width: 100%;
+      max-width: 1320px;
+      height: 100%;
+      max-height: 900px;
+      background: rgba(15,23,42,0.94);
+      border-radius: 26px;
+      overflow: hidden;
+      box-shadow: 0 24px 70px rgba(15,23,42,0.9);
+      border: 1px solid rgba(148,163,184,0.35);
+      backdrop-filter: blur(24px);
+    }
+
+    .light .app-shell {
+      background: rgba(249,250,251,0.98);
+      border-color: rgba(148,163,184,0.45);
+      box-shadow: 0 18px 55px rgba(148,163,184,0.55);
+    }
+
+    .app-layout {
+      display: flex;
+      height: 100%;
+    }
+
+    .sidebar {
+      width: 240px;
+      background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(15,23,42,0.98));
+      border-right: 1px solid rgba(31,41,55,0.9);
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .light .sidebar {
+      background: linear-gradient(180deg, #f9fafb, #f3f4f6);
+      border-right-color: #e5e7eb;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 6px 10px;
+      border-bottom: 1px solid rgba(31,41,55,0.8);
+      margin-bottom: 16px;
+    }
+
+    .light .sidebar-brand {
+      border-bottom-color: #e5e7eb;
+    }
+
+    .sidebar-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 12px;
+      background: radial-gradient(circle at 20% 20%, #bfdbfe, #2563eb 50%, #312e81 100%);
+      box-shadow: 0 0 0 1px rgba(59,130,246,0.7), 0 0 18px rgba(59,130,246,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #e5e7eb;
+    }
+
+    .sidebar-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .sidebar-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .sidebar-nav {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .nav-section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin: 8px 4px 4px;
+    }
+
+    .sidebar-link {
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-link:hover {
+      background: rgba(15,23,42,0.9);
+    }
+
+    .light .sidebar-link:hover {
+      background: #e5e7eb;
+    }
+
+    .sidebar-link.active {
+      background: rgba(37,99,235,0.14);
+      color: var(--primary);
+      border-color: rgba(37,99,235,0.5);
+    }
+
+    .sidebar-link span.icon {
+      width: 18px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .sidebar-footer {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(55,65,81,0.8);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .light .sidebar-footer {
+      border-top-color: #d1d5db;
+    }
+
+    .sidebar-footer strong {
+      color: var(--text);
+    }
+
+    /* Topbar */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      height: 56px;
+      border-bottom: 1px solid rgba(31,41,55,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      background: linear-gradient(90deg, rgba(15,23,42,0.98), rgba(15,23,42,0.96));
+    }
+
+    .light .topbar {
+      background: #ffffff;
+      border-bottom-color: #e5e7eb;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .topbar-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-input {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 7px 10px;
+      font-size: 13px;
+      background: rgba(15,23,42,0.9);
+      color: var(--text);
+      width: 190px;
+    }
+
+    .light .search-input {
+      background: #f9fafb;
+    }
+
+    .topbar-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,0.92);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .light .topbar-toggle {
+      background: #f3f4f6;
+    }
+
+    .topbar-toggle span.switch {
+      width: 30px;
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(148,163,184,0.6);
+      padding: 1px;
+      display: flex;
+      align-items: center;
+    }
+
+    .topbar-toggle span.knob {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: #f9fafb;
+      transform: translateX(0);
+      transition: transform 0.18s;
+    }
+
+    body.light .topbar-toggle span.knob {
+      transform: translateX(13px);
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,0.94);
+    }
+
+    .light .user-menu {
+      background: #f3f4f6;
+    }
+
+    .user-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, #fed7aa, #f97316 55%, #7c2d12 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .user-name {
+      font-size: 12px;
+    }
+
+    .btn-small {
+      padding: 4px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: rgba(239,68,68,0.15);
+      color: #fca5a5;
+    }
+
+    .btn-small:hover {
+      background: rgba(239,68,68,0.25);
+    }
+
+    /* Content */
+    .content {
+      flex: 1;
+      padding: 16px 18px 18px;
+      overflow: auto;
+      background: radial-gradient(circle at top, rgba(37,99,235,0.06), transparent 52%);
+    }
+
+    .content-inner {
+      display: none;
+    }
+
+    .content-inner.active {
+      display: block;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .kpi-card {
+      border-radius: 16px;
+      padding: 12px 13px;
+      background: var(--bg-elevated);
+      border: 1px solid rgba(31,41,55,0.9);
+      box-shadow: 0 12px 30px rgba(15,23,42,0.75);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .light .kpi-card {
+      box-shadow: 0 8px 22px rgba(148,163,184,0.5);
+      border-color: #e5e7eb;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .kpi-pill {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 10px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(148,163,184,0.5);
+      color: var(--text-muted);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 2.1fr 1.4fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .card {
+      border-radius: 16px;
+      padding: 12px;
+      background: var(--bg-elevated);
+      border: 1px solid rgba(31,41,55,0.9);
+      box-shadow: 0 12px 30px rgba(15,23,42,0.75);
+    }
+
+    .light .card {
+      box-shadow: 0 8px 22px rgba(148,163,184,0.5);
+      border-color: #e5e7eb;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .summary-row {
+      font-size: 13px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .summary-row span.label {
+      color: var(--text-muted);
+    }
+
+    .summary-row span.value {
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-success {
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: rgba(34,197,94,0.7);
+    }
+
+    .badge-danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border-color: rgba(239,68,68,0.7);
+    }
+
+    .badge-warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+      border-color: rgba(234,179,8,0.7);
+    }
+
+    .badge-critical {
+      background: var(--critical-soft);
+      color: var(--critical);
+      border-color: rgba(249,115,22,0.7);
+    }
+
+    .badge-neutral {
+      background: rgba(107,114,128,0.15);
+      color: #9ca3af;
+      border-color: rgba(75,85,99,0.7);
+    }
+
+    /* Logs */
+    .logs-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .logs-controls .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .logs-controls input,
+    .logs-controls select {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 6px 9px;
+      font-size: 12px;
+      background: rgba(15,23,42,0.9);
+      color: var(--text);
+      min-width: 130px;
+    }
+
+    .light .logs-controls input,
+    .light .logs-controls select {
+      background: #f9fafb;
+    }
+
+    .logs-table-wrapper {
+      margin-top: 4px;
+      border-radius: 14px;
+      overflow: auto;
+      border: 1px solid rgba(31,41,55,0.9);
+    }
+
+    .light .logs-table-wrapper {
+      border-color: #e5e7eb;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 720px;
+    }
+
+    thead {
+      background: rgba(15,23,42,0.96);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .light thead {
+      background: #f3f4f6;
+    }
+
+    th, td {
+      padding: 8px 9px;
+      text-align: left;
+      border-bottom: 1px solid rgba(31,41,55,0.85);
+    }
+
+    .light th, .light td {
+      border-bottom-color: #e5e7eb;
+    }
+
+    th {
+      font-weight: 500;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    tr:nth-child(even) td {
+      background: rgba(15,23,42,0.7);
+    }
+
+    .light tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+
+    tr:hover td {
+      background: rgba(37,99,235,0.12);
+      cursor: pointer;
+    }
+
+    .sortable {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .sortable span.sort-indicator {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .status-pill {
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      display: inline-flex;
+      border: 1px solid transparent;
+    }
+
+    .status-attack {
+      background: rgba(239,68,68,0.12);
+      color: #fecaca;
+      border-color: rgba(239,68,68,0.7);
+    }
+
+    .status-normal {
+      background: rgba(34,197,94,0.12);
+      color: #bbf7d0;
+      border-color: rgba(34,197,94,0.7);
+    }
+
+    .light .status-attack {
+      color: #b91c1c;
+      background: rgba(248,113,113,0.22);
+    }
+
+    .light .status-normal {
+      color: #166534;
+      background: rgba(52,211,153,0.22);
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      background: var(--bg-elevated);
+      border-radius: 20px;
+      padding: 14px 16px 12px;
+      box-shadow: 0 24px 70px rgba(15,23,42,0.95);
+      border: 1px solid rgba(148,163,184,0.4);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .light .modal-backdrop {
+      background: rgba(15,23,42,0.45);
+    }
+
+    .light .modal {
+      box-shadow: 0 20px 55px rgba(148,163,184,0.7);
+      border-color: #e5e7eb;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .modal-body {
+      font-size: 13px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .modal-body-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 6px 14px;
+      margin-top: 10px;
+    }
+
+    .modal-field-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .modal-field-value {
+      font-size: 13px;
+    }
+
+    .modal-footer {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Analytics bars */
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .bar-label {
+      flex: 0 0 130px;
+      color: var(--text-muted);
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 11px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.85);
+      overflow: hidden;
+    }
+
+    .light .bar-track {
+      background: #e5e7eb;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      width: 0;
+      transition: width 0.25s;
+    }
+
+    .bar-fill.attack {
+      background: linear-gradient(90deg, #ef4444, #f97316);
+    }
+
+    .bar-value {
+      flex: 0 0 60px;
+      text-align: right;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Settings */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1.4fr;
+      gap: 12px;
+    }
+
+    .settings-field-row {
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .settings-label {
+      color: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      body {
+        padding: 16px;
+      }
+
+      .auth-container {
+        flex-direction: column-reverse;
+      }
+
+      .auth-card, .auth-side {
+        max-width: 100%;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .app-shell {
+        max-height: none;
+      }
+
+      .topbar {
+        padding: 0 10px;
+      }
+
+      .search-input {
+        display: none;
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+
+      .summary-grid,
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 10px;
+      }
+
+      .auth-card {
+        padding: 22px 18px 18px;
+      }
+
+      .auth-side {
+        padding: 18px 16px;
+      }
+
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .logs-controls {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .app-shell {
+        border-radius: 18px;
+      }
+    }
+  </style>
+</head>
+<body class="auth-mode">
+  <!-- Authentication -->
+  <div class="auth-container" id="authContainer">
+    <div class="auth-card">
+      <div class="auth-toggle-row">
+        <button type="button" id="authThemeToggle"><span>Toggle theme</span></button>
+      </div>
+      <div id="signInView">
+        <div class="auth-title">
+          <span>Sign in to CICIDS NIDS</span>
+        </div>
+        <div class="auth-subtitle">Monitor CIC-IDS2017 style traffic flows and attack detections.</div>
+        <div id="signInMessage" class="message"></div>
+        <form id="signInForm">
+          <div class="form-group">
+            <label class="form-label" for="loginUsername">Username</label>
+            <input class="form-input" type="text" id="loginUsername" required placeholder="Enter your username">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">Password</label>
+            <input class="form-input" type="password" id="loginPassword" required minlength="6" placeholder="••••••••">
+          </div>
+          <div class="form-footer-row">
+            <label class="checkbox-row">
+              <input type="checkbox" id="rememberMe">
+              <span>Remember this device</span>
+            </label>
+            <button type="button" class="btn-link" id="linkForgotPassword">Forgot password?</button>
+          </div>
+          <button type="submit" class="btn btn-primary">Sign in</button>
+        </form>
+        <p class="auth-switch-text">
+          Don’t have an account?
+          <button type="button" class="btn-link" id="linkToSignUp">Create one</button>
+        </p>
+        <p class="auth-hint">Demo-only authentication. Use any username and a password with at least 6 characters to continue. Master admin: Username = Admin, Password = Password#</p>
+      </div>
+
+      <div id="signUpView" style="display:none;">
+        <div class="auth-title">
+          <span>Create an account</span>
+        </div>
+        <div class="auth-subtitle">Provision access for security analysts and SOC operators.</div>
+        <div id="signUpMessage" class="message"></div>
+        <form id="signUpForm">
+          <div class="form-group">
+            <label class="form-label" for="signUpName">Full name</label>
+            <input class="form-input" type="text" id="signUpName" required placeholder="Analyst Name">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signUpEmail">Email</label>
+            <input class="form-input" type="email" id="signUpEmail" required placeholder="you@example.com">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="signUpPassword">Password</label>
+              <input class="form-input" type="password" id="signUpPassword" required minlength="6" placeholder="At least 6 characters">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="signUpConfirmPassword">Confirm password</label>
+              <input class="form-input" type="password" id="signUpConfirmPassword" required minlength="6" placeholder="Repeat password">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Create account</button>
+        </form>
+        <p class="auth-switch-text">
+          Already have an account?
+          <button type="button" class="btn-link" id="linkToSignInFromSignUp">Sign in</button>
+        </p>
+        <p class="auth-hint">Passwords are checked only on the client side for length and match.</p>
+      </div>
+
+      <div id="forgotPasswordView" style="display:none;">
+        <div class="auth-title">
+          <span>Reset your password</span>
+        </div>
+        <div class="auth-subtitle">Send a reset link to your analyst email address.</div>
+        <div id="forgotPasswordMessage" class="message"></div>
+        <form id="forgotPasswordForm">
+          <div class="form-group">
+            <label class="form-label" for="forgotEmail">Email</label>
+            <input class="form-input" type="email" id="forgotEmail" required placeholder="you@example.com">
+          </div>
+          <button type="submit" class="btn btn-primary">Send reset link</button>
+        </form>
+        <p class="auth-switch-text">
+          Remembered your password?
+          <button type="button" class="btn-link" id="linkBackToSignIn">Back to sign in</button>
+        </p>
+      </div>
+    </div>
+
+    <div class="auth-side">
+      <div class="auth-side-inner">
+        <div class="auth-brand">
+          <span class="logo-dot"></span>
+          <span>CICIDS-STYLE NIDS</span>
+        </div>
+        <div class="auth-badge">
+          <div class="auth-badge-dot"><div class="auth-badge-dot-inner"></div></div>
+          <div class="auth-badge-text">Realistic CIC-IDS2017 flow features</div>
+        </div>
+        <h1>Flow‑level Intrusion Detection Workspace</h1>
+        <p>Visualize BENIGN vs attack flows such as DoS Hulk, DDoS, PortScan, FTP‑Patator, SSH‑Patator, Web Attack, Infiltration and Botnet in a SOC‑style dashboard.[web:4][web:5]</p>
+        <div class="auth-pill-list">
+          <div class="auth-pill"><span class="auth-pill-dot"></span> Flow Duration &amp; Packet Counts</div>
+          <div class="auth-pill"><span class="auth-pill-dot"></span> Attack Status: BENIGN vs Attack</div>
+          <div class="auth-pill"><span class="auth-pill-dot"></span> Confidence Scores from ML Model</div>
+        </div>
+        <div class="auth-metric-grid">
+          <div class="auth-metric">
+            <div class="auth-metric-label">Dataset coverage</div>
+            <div class="auth-metric-value" id="authMetricCoverage">—</div>
+            <div class="auth-metric-chip"><span class="dot"></span> CIC‑IDS2017 style[web:4][web:5]</div>
+          </div>
+          <div class="auth-metric">
+            <div class="auth-metric-label">Attack families</div>
+            <div class="auth-metric-value" id="authMetricFamilies">—</div>
+            <div class="auth-metric-chip"><span class="dot"></span> DoS / DDoS / Brute Force / Web[web:4][web:5]</div>
+          </div>
+        </div>
+        <div class="auth-footer-note">
+          This prototype focuses on front‑end UX only and does not expose raw CIC‑IDS2017 records or model weights, respecting dataset licensing and intellectual property.[web:4][web:5]
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App shell -->
+  <div class="app-shell" id="appShell">
+    <div class="app-layout">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo">N</div>
+          <div>
+            <div class="sidebar-title">Network IDS</div>
+            <div class="sidebar-sub">CIC‑IDS2017 flows[web:4][web:5]</div>
+          </div>
+        </div>
+        <div class="sidebar-nav">
+          <div class="nav-section-label">Monitor</div>
+          <div class="sidebar-link active" data-view="dashboard">
+            <span class="icon">🏠</span>
+            <span>Dashboard</span>
+          </div>
+          <div class="sidebar-link" data-view="logs">
+            <span class="icon">📄</span>
+            <span>Logs</span>
+          </div>
+          <div class="sidebar-link" data-view="analytics">
+            <span class="icon">📊</span>
+            <span>Analytics</span>
+          </div>
+          <div class="sidebar-link" data-view="manual-input">
+            <span class="icon">✏️</span>
+            <span>Manual Input</span>
+          </div>
+          <div class="nav-section-label">Account</div>
+          <div class="sidebar-link" data-view="settings">
+            <span class="icon">⚙️</span>
+            <span>Settings</span>
+          </div>
+        </div>
+        <div class="sidebar-footer">
+          <div><strong>Last update:</strong> <span id="sidebarLastUpdate">—</span></div>
+          <div>Simulated CIC‑IDS2017 inference pipeline.[web:4][web:5]</div>
+        </div>
+      </aside>
+      <div class="main">
+        <header class="topbar">
+          <div class="topbar-left">
+            <div>
+              <div class="topbar-title">Intrusion Detection Dashboard</div>
+              <div class="topbar-subtitle">Flow‑based ML model &amp; CIC‑IDS2017 attack labels.[web:4][web:5]</div>
+            </div>
+          </div>
+          <div class="topbar-right">
+            <input type="text" id="globalSearchInput" class="search-input" placeholder="Search IP or label…">
+            <button class="topbar-toggle" id="themeToggle">
+              <span>Light / Dark</span>
+              <span class="switch"><span class="knob"></span></span>
+            </button>
+            <div class="user-menu">
+              <div class="user-avatar" id="userAvatar">AN</div>
+              <div class="user-name" id="userNameDisplay">Analyst</div>
+              <button class="btn-small" id="logoutBtnTop">Logout</button>
+            </div>
+          </div>
+        </header>
+        <main class="content">
+          <!-- Dashboard home -->
+          <section class="content-inner active" id="view-dashboard">
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="kpi-pill">CIC Flow records</div>
+                <div class="kpi-label">Total requests analyzed</div>
+                <div class="kpi-value" id="kpiTotalRequests">—</div>
+                <div class="kpi-sub">All BENIGN and attack flows classified by the model.[web:4][web:5]</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-pill">Alerts</div>
+                <div class="kpi-label">Total attacks detected</div>
+                <div class="kpi-value" id="kpiTotalAttacks">—</div>
+                <div class="kpi-sub"><span id="kpiAttackRatio">—</span> of traffic labeled as attack.</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-pill">Baseline</div>
+                <div class="kpi-label">No‑Attack (BENIGN) traffic</div>
+                <div class="kpi-value" id="kpiNoAttackPercent">—</div>
+                <div class="kpi-sub">Flows labeled as BENIGN by the classifier.[web:4][web:5]</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-pill">Top threat</div>
+                <div class="kpi-label">Most frequent attack type</div>
+                <div class="kpi-value" id="kpiTopAttack">—</div>
+                <div class="kpi-sub">Aggregated over current filtered window.[web:4][web:5]</div>
+              </div>
+            </div>
+
+            <div class="summary-grid">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title">Today’s detection summary</div>
+                    <div class="card-subtitle">Based on flows from the current UTC day.</div>
+                  </div>
+                  <span class="badge badge-neutral" id="summaryDate">Today</span>
+                </div>
+                <div class="summary-row">
+                  <span class="label">Attacks today</span>
+                  <span class="value" id="attacksTodayValue">—</span>
+                </div>
+                <div class="summary-row">
+                  <span class="label">Last attack detected</span>
+                  <span class="value" id="lastAttackText">—</span>
+                </div>
+                <div class="summary-row">
+                  <span class="label">Highest confidence attack</span>
+                  <span class="value" id="maxConfidenceAttack">—</span>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">Model signal quality</div>
+                </div>
+                <div class="summary-row">
+                  <span class="label">Average confidence</span>
+                  <span class="value" id="avgConfidenceValue">—</span>
+                </div>
+                <div class="summary-row">
+                  <span class="label">High severity attacks (&gt;= 0.9)</span>
+                  <span class="value" id="highSeverityCount">—</span>
+                </div>
+                <div class="summary-row">
+                  <span class="label">Label diversity</span>
+                  <span class="value" id="labelDiversityValue">—</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Logs view -->
+          <section class="content-inner" id="view-logs">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Flow‑level intrusion logs</div>
+                  <div class="card-subtitle">CICFlowMeter‑style records with attack labels and model confidence.[web:4][web:5]</div>
+                </div>
+              </div>
+              <div class="logs-controls">
+                <div class="control-item">
+                  <span>Search (IP / label)</span>
+                  <input type="text" id="logsSearchInput" placeholder="e.g., 192.168.10.8 or DoS Hulk">
+                </div>
+                <div class="control-item">
+                  <span>Attack status</span>
+                  <select id="filterStatus">
+                    <option value="all">All</option>
+                    <option value="attack">Attack</option>
+                    <option value="benign">No Attack (BENIGN)</option>
+                  </select>
+                </div>
+                <div class="control-item">
+                  <span>Attack type</span>
+                  <select id="filterAttackType">
+                    <option value="all">All types</option>
+                  </select>
+                </div>
+                <div class="control-item">
+                  <span>Sort by</span>
+                  <select id="sortSelect">
+                    <option value="timestampDesc">Timestamp ↓</option>
+                    <option value="timestampAsc">Timestamp ↑</option>
+                    <option value="confidenceDesc">Confidence ↓</option>
+                    <option value="confidenceAsc">Confidence ↑</option>
+                  </select>
+                </div>
+              </div>
+              <div class="logs-table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th><span class="sortable" data-sort="timestamp">Timestamp<span class="sort-indicator">⇅</span></span></th>
+                      <th>Src IP</th>
+                      <th>Dst IP</th>
+                      <th>Protocol</th>
+                      <th>Attack status</th>
+                      <th>Attack type</th>
+                      <th><span class="sortable" data-sort="confidence">Confidence<span class="sort-indicator">⇅</span></span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="logsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Analytics view -->
+          <section class="content-inner" id="view-analytics">
+            <div class="summary-grid">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title">Attack type distribution</div>
+                    <div class="card-subtitle">Count of CIC‑IDS2017 attack classes across current window.[web:4][web:5]</div>
+                  </div>
+                </div>
+                <div id="attackTypeBars"></div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title">Attack vs BENIGN traffic</div>
+                    <div class="card-subtitle">Overall split between BENIGN and attack flows.[web:4][web:5]</div>
+                  </div>
+                </div>
+                <div id="attackVsBenignBars"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Manual Input -->
+          <section class="content-inner" id="view-manual-input">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Manual Attack Detection</div>
+                  <div class="card-subtitle">Enter network flow data manually to analyze potential attacks.</div>
+                </div>
+              </div>
+              <div style="padding: 24px;">
+                <form id="manualInputForm">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label" for="manualSrcIP">Source IP</label>
+                      <input class="form-input" type="text" id="manualSrcIP" required placeholder="e.g., 192.168.1.100">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="manualDstIP">Destination IP</label>
+                      <input class="form-input" type="text" id="manualDstIP" required placeholder="e.g., 10.0.0.50">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label" for="manualProtocol">Protocol</label>
+                      <select class="form-input" id="manualProtocol" required>
+                        <option value="">Select protocol</option>
+                        <option value="TCP">TCP</option>
+                        <option value="UDP">UDP</option>
+                        <option value="ICMP">ICMP</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="manualFlowDuration">Flow Duration (ms)</label>
+                      <input class="form-input" type="number" id="manualFlowDuration" required placeholder="e.g., 120000">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label" for="manualTotFwdPkts">Total Forward Packets</label>
+                      <input class="form-input" type="number" id="manualTotFwdPkts" required placeholder="e.g., 100">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="manualTotBwdPkts">Total Backward Packets</label>
+                      <input class="form-input" type="number" id="manualTotBwdPkts" required placeholder="e.g., 50">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label" for="manualFwdPktLenMean">Forward Packet Length Mean</label>
+                      <input class="form-input" type="number" step="0.01" id="manualFwdPktLenMean" required placeholder="e.g., 450.5">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="manualBwdPktLenMean">Backward Packet Length Mean</label>
+                      <input class="form-input" type="number" step="0.01" id="manualBwdPktLenMean" required placeholder="e.g., 300.2">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label" for="manualFlowBytsPerSec">Flow Bytes/Sec</label>
+                      <input class="form-input" type="number" step="0.01" id="manualFlowBytsPerSec" required placeholder="e.g., 15000.5">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="manualFlowPktsPerSec">Flow Packets/Sec</label>
+                      <input class="form-input" type="number" step="0.01" id="manualFlowPktsPerSec" required placeholder="e.g., 450.0">
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn btn-primary">Analyze Attack</button>
+                    <button type="button" class="btn-ghost" id="clearManualInputBtn">Clear Input</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div class="card" id="manualResultCard" style="display: none; margin-top: 24px;">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Analysis Result</div>
+                  <div class="card-subtitle">Attack classification based on input data.</div>
+                </div>
+              </div>
+              <div style="padding: 24px;">
+                <div style="margin-bottom: 20px;">
+                  <span class="badge" id="manualResultBadge" style="font-size: 14px; padding: 8px 16px;">—</span>
+                </div>
+                <div class="modal-body-grid" id="manualResultFields"></div>
+                <div style="margin-top: 20px; padding: 16px; background: var(--bg-soft); border-radius: 8px; border-left: 4px solid var(--primary);">
+                  <strong style="display: block; margin-bottom: 8px; color: var(--primary);">Attack Information:</strong>
+                  <p id="manualAttackInfo" style="margin: 0; line-height: 1.6; color: var(--text);"></p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Settings -->
+          <section class="content-inner" id="view-settings">
+            <div class="settings-grid">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title">Analyst profile</div>
+                    <div class="card-subtitle">User information for this session.</div>
+                  </div>
+                </div>
+                <div class="settings-field-row">
+                  <span class="settings-label">Name:</span>
+                  <span id="settingsUserName">—</span>
+                </div>
+                <div class="settings-field-row">
+                  <span class="settings-label">Email:</span>
+                  <span id="settingsUserEmail">—</span>
+                </div>
+                <div class="settings-field-row">
+                  <span class="settings-label">Role:</span>
+                  <span>Network intrusion analyst</span>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title">Change password</div>
+                    <div class="card-subtitle">Local validation only; no real backend.</div>
+                  </div>
+                </div>
+                <div id="settingsMessage" class="message"></div>
+                <form id="changePasswordForm">
+                  <div class="form-group">
+                    <label class="form-label" for="currentPassword">Current password</label>
+                    <input class="form-input" type="password" id="currentPassword" required minlength="6">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="newPassword">New password</label>
+                    <input class="form-input" type="password" id="newPassword" required minlength="6">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="confirmNewPassword">Confirm new password</label>
+                    <input class="form-input" type="password" id="confirmNewPassword" required minlength="6">
+                  </div>
+                  <button type="submit" class="btn btn-primary">Update password</button>
+                </form>
+                <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                  <button type="button" class="btn-ghost" id="logoutBtnSettings">Logout</button>
+                  <span style="font-size:11px; color:var(--text-muted);">Logging out clears the in‑browser session only.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail modal -->
+  <div class="modal-backdrop" id="detailModalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Flow classification details</div>
+          <div class="card-subtitle" id="modalSubtitle">—</div>
+        </div>
+        <button class="btn-ghost" type="button" id="modalCloseBtn">Close</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <span class="badge badge-neutral" id="modalSeverityBadge">—</span>
+        </div>
+        <p style="margin-top:8px;" id="modalSummaryText"></p>
+        <div class="modal-body-grid" id="modalFields"></div>
+      </div>
+      <div class="modal-footer">
+        <span style="font-size:11px; color:var(--text-muted);">Feature names reflect typical CICFlowMeter columns (e.g., Flow Duration, TotFwdPkts, TotBwdPkts, FwdPktLenMean).[web:4][web:5]</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ------------------------------
+    // Mock CIC-IDS2017-style data
+    // ------------------------------
+    // Feature names align with common CICFlowMeter columns and attack labels such as
+    // BENIGN, DoS Hulk, DDoS, PortScan, FTP-Patator, SSH-Patator, Web Attack, Infiltration, Botnet.[web:4][web:5]
+    const mockLogs = [
+      {
+        id: 1,
+        timestamp: '2025-12-06T11:12:03Z',
+        srcIP: '192.168.10.8',
+        dstIP: '205.174.165.73',
+        protocol: 'TCP',
+        flowDuration: 120034,
+        totFwdPkts: 34,
+        totBwdPkts: 2,
+        fwdPktLenMean: 540.2,
+        bwdPktLenMean: 66.0,
+        flowBytsPerSec: 9800.5,
+        flowPktsPerSec: 300.1,
+        flagFIN: 0,
+        flagSYN: 1,
+        flagRST: 0,
+        flagACK: 1,
+        label: 'DoS Hulk',
+        status: 'attack',
+        confidence: 0.99
+      },
+      {
+        id: 2,
+        timestamp: '2025-12-06T12:45:40Z',
+        srcIP: '192.168.10.9',
+        dstIP: '52.94.76.13',
+        protocol: 'TCP',
+        flowDuration: 8030,
+        totFwdPkts: 10,
+        totBwdPkts: 8,
+        fwdPktLenMean: 320.4,
+        bwdPktLenMean: 280.1,
+        flowBytsPerSec: 5400.0,
+        flowPktsPerSec: 240.0,
+        flagFIN: 0,
+        flagSYN: 0,
+        flagRST: 0,
+        flagACK: 1,
+        label: 'BENIGN',
+        status: 'benign',
+        confidence: 0.94
+      },
+      {
+        id: 3,
+        timestamp: '2025-12-06T13:10:15Z',
+        srcIP: '205.174.165.73',
+        dstIP: '192.168.10.12',
+        protocol: 'TCP',
+        flowDuration: 205000,
+        totFwdPkts: 400,
+        totBwdPkts: 410,
+        fwdPktLenMean: 450.0,
+        bwdPktLenMean: 470.0,
+        flowBytsPerSec: 21500.7,
+        flowPktsPerSec: 390.0,
+        flagFIN: 0,
+        flagSYN: 1,
+        flagRST: 0,
+        flagACK: 1,
+        label: 'DDoS',
+        status: 'attack',
+        confidence: 0.97
+      },
+      {
+        id: 4,
+        timestamp: '2025-12-06T09:02:45Z',
+        srcIP: '192.168.10.10',
+        dstIP: '192.168.10.1',
+        protocol: 'UDP',
+        flowDuration: 40340,
+        totFwdPkts: 22,
+        totBwdPkts: 0,
+        fwdPktLenMean: 300.4,
+        bwdPktLenMean: 0,
+        flowBytsPerSec: 8200.2,
+        flowPktsPerSec: 200.0,
+        flagFIN: 0,
+        flagSYN: 0,
+        flagRST: 0,
+        flagACK: 0,
+        label: 'PortScan',
+        status: 'attack',
+        confidence: 0.93
+      },
+      {
+        id: 5,
+        timestamp: '2025-12-05T18:20:10Z',
+        srcIP: '192.168.10.15',
+        dstIP: '205.174.165.80',
+        protocol: 'TCP',
+        flowDuration: 150034,
+        totFwdPkts: 60,
+        totBwdPkts: 58,
+        fwdPktLenMean: 520.3,
+        bwdPktLenMean: 510.2,
+        flowBytsPerSec: 12500.6,
+        flowPktsPerSec: 280.1,
+        flagFIN: 0,
+        flagSYN: 1,
+        flagRST: 0,
+        flagACK: 1,
+        label: 'FTP-Patator',
+        status: 'attack',
+        confidence: 0.89
+      },
+      {
+        id: 6,
+        timestamp: '2025-12-05T10:04:03Z',
+        srcIP: '192.168.10.16',
+        dstIP: '205.174.165.80',
+        protocol: 'TCP',
+        flowDuration: 95000,
+        totFwdPkts: 54,
+        totBwdPkts: 52,
+        fwdPktLenMean: 410.0,
+        bwdPktLenMean: 420.0,
+        flowBytsPerSec: 9100.3,
+        flowPktsPerSec: 220.0,
+        flagFIN: 0,
+        flagSYN: 1,
+        flagRST: 0,
+        flagACK: 1,
+        label: 'SSH-Patator',
+        status: 'attack',
+        confidence: 0.92
+      },
+      {
+        id: 7,
+        timestamp: '2025-12-06T07:55:55Z',
+        srcIP: '192.168.10.20',
+        dstIP: '192.168.10.3',
+        protocol: 'TCP',
+        flowDuration: 5400,
+        totFwdPkts: 8,
+        totBwdPkts: 8,
+        fwdPktLenMean: 280.0,
+        bwdPktLenMean: 275.0,
+        flowBytsPerSec: 4300.1,
+        flowPktsPerSec: 260.0,
+        flagFIN: 0,
+        flagSYN: 0,
+        flagRST: 0,
+        flagACK: 1,
+        label: 'BENIGN',
+        status: 'benign',
+        confidence: 0.91
+      },
+      {
+        id: 8,
+        timestamp: '2025-12-04T16:30:25Z',
+        srcIP: '205.174.165.73',
+        dstIP: '192.168.10.11',
+        protocol: 'TCP',
+        flowDuration: 220034,
+        totFwdPkts: 90,
+        totBwdPkts: 120,
+        fwdPktLenMean: 500.1,
+        bwdPktLenMean: 510.9,
+        flowBytsPerSec: 15400.4,
+        flowPktsPerSec: 310.4,
+        flagFIN: 0,
+        flagSYN: 1,
+        flagRST: 0,
+        flagACK: 1,
+        label: 'Web Attack',
+        status: 'attack',
+        confidence: 0.95
+      },
+      {
+        id: 9,
+        timestamp: '2025-12-04T08:14:19Z',
+        srcIP: '192.168.10.25',
+        dstIP: '205.174.165.80',
+        protocol: 'TCP',
+        flowDuration: 194000,
+        totFwdPkts: 200,
+        totBwdPkts: 180,
+        fwdPktLenMean: 460.5,
+        bwdPktLenMean: 470.0,
+        flowBytsPerSec: 13200.1,
+        flowPktsPerSec: 330.0,
+        flagFIN: 0,
+        flagSYN: 1,
+        flagRST: 0,
+        flagACK: 1,
+        label: 'Botnet',
+        status: 'attack',
+        confidence: 0.96
+      },
+      {
+        id: 10,
+        timestamp: '2025-12-03T20:40:12Z',
+        srcIP: '192.168.10.30',
+        dstIP: '192.168.10.5',
+        protocol: 'TCP',
+        flowDuration: 184000,
+        totFwdPkts: 150,
+        totBwdPkts: 160,
+        fwdPktLenMean: 440.3,
+        bwdPktLenMean: 430.0,
+        flowBytsPerSec: 10100.1,
+        flowPktsPerSec: 270.0,
+        flagFIN: 0,
+        flagSYN: 1,
+        flagRST: 0,
+        flagACK: 1,
+        label: 'Infiltration',
+        status: 'attack',
+        confidence: 0.9
+      }
+    ];
+
+    let filteredLogs = [...mockLogs];
+    let currentSort = 'timestampDesc';
+    let loggedInUser = null;
+    let isLoggedIn = false;
+
+    // Theme initialization from localStorage
+    const THEME_KEY = 'nid_theme';
+    function applyTheme(theme) {
+      if (theme === 'light') {
+        document.body.classList.add('light');
+      } else {
+        document.body.classList.remove('light');
+      }
+      localStorage.setItem(THEME_KEY, theme);
+    }
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    if (storedTheme) {
+      applyTheme(storedTheme);
+    }
+
+    // ------------------------------
+    // Helper: view switching
+    // ------------------------------
+    // Auth vs dashboard is controlled by toggling .auth-mode on <body> and display on #authContainer / #appShell.
+    // Inside the dashboard, sidebar buttons with data-view attribute show a single <section> while hiding others.
+    function showAppShell() {
+      document.body.classList.remove('auth-mode');
+      document.getElementById('authContainer').style.display = 'none';
+      document.getElementById('appShell').style.display = 'block';
+    }
+    function showAuthShell() {
+      document.body.classList.add('auth-mode');
+      document.getElementById('authContainer').style.display = 'flex';
+      document.getElementById('appShell').style.display = 'none';
+    }
+
+    function switchAuthView(view) {
+      document.getElementById('signInView').style.display = view === 'signin' ? 'block' : 'none';
+      document.getElementById('signUpView').style.display = view === 'signup' ? 'block' : 'none';
+      document.getElementById('forgotPasswordView').style.display = view === 'forgot' ? 'block' : 'none';
+      document.getElementById('signInMessage').style.display = 'none';
+      document.getElementById('signUpMessage').style.display = 'none';
+      document.getElementById('forgotPasswordMessage').style.display = 'none';
+    }
+
+    function switchDashboardView(viewId) {
+      document.querySelectorAll('.content-inner').forEach(sec => {
+        sec.classList.toggle('active', sec.id === 'view-' + viewId);
+      });
+      document.querySelectorAll('.sidebar-link').forEach(link => {
+        link.classList.toggle('active', link.dataset.view === viewId);
+      });
+      if (viewId === 'analytics') {
+        renderAnalytics();
+      }
+    }
+
+    // ------------------------------
+    // Filtering, searching, sorting
+    // ------------------------------
+    // Filtering:
+    //  - A free text search on source/destination IP and attack label.
+    //  - Status filter: all / attack / benign.
+    //  - Label filter: exact attack type or BENIGN.
+    // Sorting:
+    //  - Applied after filtering; by timestamp or confidence ascending/descending.
+    function applyFiltersAndSort() {
+      const searchText = (document.getElementById('logsSearchInput').value || '').toLowerCase();
+      const statusFilter = document.getElementById('filterStatus').value;
+      const typeFilter = document.getElementById('filterAttackType').value;
+      const globalSearch = (document.getElementById('globalSearchInput').value || '').toLowerCase();
+
+      filteredLogs = mockLogs.filter(entry => {
+        if (statusFilter === 'attack' && entry.status !== 'attack') return false;
+        if (statusFilter === 'benign' && entry.status !== 'benign') return false;
+        if (typeFilter !== 'all' && entry.label !== typeFilter) return false;
+
+        const combinedSearch = (searchText + ' ' + globalSearch).trim();
+        if (combinedSearch) {
+          const haystack = (entry.srcIP + ' ' + entry.dstIP + ' ' + entry.label).toLowerCase();
+          if (!haystack.includes(combinedSearch)) return false;
+        }
+        return true;
+      });
+
+      const sortValue = document.getElementById('sortSelect').value || currentSort;
+      currentSort = sortValue;
+
+      filteredLogs.sort((a, b) => {
+        if (sortValue === 'timestampAsc') {
+          return new Date(a.timestamp) - new Date(b.timestamp);
+        }
+        if (sortValue === 'timestampDesc') {
+          return new Date(b.timestamp) - new Date(a.timestamp);
+        }
+        if (sortValue === 'confidenceAsc') {
+          return a.confidence - b.confidence;
+        }
+        if (sortValue === 'confidenceDesc') {
+          return b.confidence - a.confidence;
+        }
+        return 0;
+      });
+
+      renderLogsTable();
+      recomputeKpis();
+      if (document.getElementById('view-analytics').classList.contains('active')) {
+        renderAnalytics();
+      }
+    }
+
+    // ------------------------------
+    // Table rendering
+    // ------------------------------
+    function renderLogsTable() {
+      const tbody = document.getElementById('logsTableBody');
+      tbody.innerHTML = '';
+      filteredLogs.forEach(entry => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${new Date(entry.timestamp).toLocaleString()}</td>
+          <td>${entry.srcIP}</td>
+          <td>${entry.dstIP}</td>
+          <td>${entry.protocol}</td>
+          <td><span class="status-pill ${entry.status === 'attack' ? 'status-attack' : 'status-normal'}">${entry.status === 'attack' ? 'Attack' : 'BENIGN'}</span></td>
+          <td>${entry.label}</td>
+          <td>${(entry.confidence * 100).toFixed(1)}%</td>
+        `;
+        tr.addEventListener('click', () => openDetailModal(entry));
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ------------------------------
+    // KPIs and analytics metrics
+    // ------------------------------
+    // KPIs are computed from the currently filtered list:
+    //  - Total requests / total attacks / BENIGN percentage.
+    //  - Most frequent attack type.
+    //  - Today-specific metrics and aggregates over all filtered flows.
+    function recomputeKpis() {
+      const total = filteredLogs.length;
+      const attacks = filteredLogs.filter(e => e.status === 'attack');
+      const benign = filteredLogs.filter(e => e.status === 'benign');
+      const totalAttacks = attacks.length;
+      const benignPercent = total > 0 ? (benign.length / total) * 100 : 0;
+      document.getElementById('kpiTotalRequests').textContent = total.toString();
+      document.getElementById('kpiTotalAttacks').textContent = totalAttacks.toString();
+      document.getElementById('kpiAttackRatio').textContent = total > 0 ? (totalAttacks / total * 100).toFixed(1) + '%' : '0%';
+      document.getElementById('kpiNoAttackPercent').textContent = total > 0 ? benignPercent.toFixed(1) + '%' : '0%';
+
+      const attackCounts = {};
+      attacks.forEach(a => {
+        attackCounts[a.label] = (attackCounts[a.label] || 0) + 1;
+      });
+      let topAttack = '—';
+      let maxCount = 0;
+      Object.entries(attackCounts).forEach(([label, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          topAttack = label;
+        }
+      });
+      document.getElementById('kpiTopAttack').textContent = topAttack;
+
+      const today = new Date().toISOString().slice(0, 10);
+      const todayAttacks = attacks.filter(a => a.timestamp.slice(0, 10) === today);
+      document.getElementById('attacksTodayValue').textContent = todayAttacks.length.toString();
+      document.getElementById('summaryDate').textContent = today;
+
+      const sortedByTime = [...attacks].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      if (sortedByTime.length > 0) {
+        const last = sortedByTime[0];
+        const severity = deriveSeverity(last);
+        document.getElementById('lastAttackText').innerHTML = `${new Date(last.timestamp).toLocaleString()} – ${last.label} – <span>${severity.level}</span>`;
+      } else {
+        document.getElementById('lastAttackText').textContent = 'No attacks in current window';
+      }
+
+      const maxConfEntry = attacks.reduce((best, e) => e.confidence > (best ? best.confidence : 0) ? e : best, null);
+      if (maxConfEntry) {
+        document.getElementById('maxConfidenceAttack').textContent = `${maxConfEntry.label} @ ${(maxConfEntry.confidence * 100).toFixed(1)}%`;
+      } else {
+        document.getElementById('maxConfidenceAttack').textContent = '—';
+      }
+
+      const avgConfidence = filteredLogs.length > 0 ? filteredLogs.reduce((sum, e) => sum + e.confidence, 0) / filteredLogs.length : 0;
+      document.getElementById('avgConfidenceValue').textContent = (avgConfidence * 100).toFixed(1) + '%';
+
+      const highSeverity = attacks.filter(a => a.confidence >= 0.9).length;
+      document.getElementById('highSeverityCount').textContent = highSeverity.toString();
+
+      const uniqueLabels = new Set(filteredLogs.map(e => e.label));
+      document.getElementById('labelDiversityValue').textContent = uniqueLabels.size + ' labels';
+    }
+
+    function renderAnalytics() {
+      const attackTypeContainer = document.getElementById('attackTypeBars');
+      const attackVsBenignContainer = document.getElementById('attackVsBenignBars');
+      attackTypeContainer.innerHTML = '';
+      attackVsBenignContainer.innerHTML = '';
+
+      const counts = {};
+      filteredLogs.forEach(e => {
+        counts[e.label] = (counts[e.label] || 0) + 1;
+      });
+      const maxCount = Math.max(...Object.values(counts), 1);
+
+      Object.entries(counts).forEach(([label, count]) => {
+        const row = document.createElement('div');
+        row.className = 'bar-row';
+        const barFillClass = label === 'BENIGN' ? '' : 'attack';
+        row.innerHTML = `
+          <div class="bar-label">${label}</div>
+          <div class="bar-track"><div class="bar-fill ${barFillClass}" style="width:${(count / maxCount) * 100}%"></div></div>
+          <div class="bar-value">${count}</div>
+        `;
+        attackTypeContainer.appendChild(row);
+      });
+
+      const benign = filteredLogs.filter(e => e.status === 'benign').length;
+      const attack = filteredLogs.filter(e => e.status === 'attack').length;
+      const total = benign + attack || 1;
+
+      const benignRow = document.createElement('div');
+      benignRow.className = 'bar-row';
+      benignRow.innerHTML = `
+        <div class="bar-label">BENIGN</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(benign / total) * 100}%"></div></div>
+        <div class="bar-value">${benign}</div>
+      `;
+      const attackRow = document.createElement('div');
+      attackRow.className = 'bar-row';
+      attackRow.innerHTML = `
+        <div class="bar-label">Attack</div>
+        <div class="bar-track"><div class="bar-fill attack" style="width:${(attack / total) * 100}%"></div></div>
+        <div class="bar-value">${attack}</div>
+      `;
+      attackVsBenignContainer.appendChild(benignRow);
+      attackVsBenignContainer.appendChild(attackRow);
+    }
+
+    // ------------------------------
+    // Detail modal
+    // ------------------------------
+    function deriveSeverity(entry) {
+      let level = 'Medium';
+      let badgeClass = 'badge-warning';
+      if (entry.status === 'benign') {
+        level = 'Informational';
+        badgeClass = 'badge-neutral';
+      } else if (entry.confidence >= 0.97 || ['DDoS', 'Botnet'].includes(entry.label)) {
+        level = 'Critical';
+        badgeClass = 'badge-critical';
+      } else if (entry.confidence >= 0.93 || ['DoS Hulk', 'Infiltration', 'PortScan'].includes(entry.label)) {
+        level = 'High';
+        badgeClass = 'badge-danger';
+      } else if (entry.confidence >= 0.85) {
+        level = 'Medium';
+        badgeClass = 'badge-warning';
+      } else {
+        level = 'Low';
+        badgeClass = 'badge-success';
+      }
+      return { level, badgeClass };
+    }
+
+    function openDetailModal(entry) {
+      const severity = deriveSeverity(entry);
+      const badge = document.getElementById('modalSeverityBadge');
+      badge.textContent = severity.level;
+      badge.className = 'badge ' + severity.badgeClass;
+
+      document.getElementById('modalSubtitle').textContent = `${entry.label} – ${entry.status === 'attack' ? 'Attack' : 'BENIGN'} – ${(entry.confidence * 100).toFixed(1)}%`;
+      document.getElementById('modalSummaryText').textContent = `This traffic was classified as ${entry.label} with ${(entry.confidence * 100).toFixed(1)}% confidence.`;
+
+      const fieldsContainer = document.getElementById('modalFields');
+      fieldsContainer.innerHTML = '';
+      const fieldPairs = [
+        ['Timestamp', new Date(entry.timestamp).toLocaleString()],
+        ['Source IP', entry.srcIP],
+        ['Destination IP', entry.dstIP],
+        ['Protocol', entry.protocol],
+        ['Attack status', entry.status === 'attack' ? 'Attack' : 'BENIGN'],
+        ['Attack type', entry.label],
+        ['Confidence', (entry.confidence * 100).toFixed(1) + '%'],
+        ['Flow Duration (µs)', entry.flowDuration],
+        ['TotFwdPkts', entry.totFwdPkts],
+        ['TotBwdPkts', entry.totBwdPkts],
+        ['FwdPktLenMean', entry.fwdPktLenMean],
+        ['BwdPktLenMean', entry.bwdPktLenMean],
+        ['FlowByts/s', entry.flowBytsPerSec],
+        ['FlowPkts/s', entry.flowPktsPerSec],
+        ['FIN Flag Cnt', entry.flagFIN],
+        ['SYN Flag Cnt', entry.flagSYN],
+        ['RST Flag Cnt', entry.flagRST],
+        ['ACK Flag Cnt', entry.flagACK]
+      ];
+      fieldPairs.forEach(([label, value]) => {
+        const wrapper = document.createElement('div');
+        const labelElem = document.createElement('div');
+        labelElem.className = 'modal-field-label';
+        labelElem.textContent = label;
+        const valueElem = document.createElement('div');
+        valueElem.className = 'modal-field-value';
+        valueElem.textContent = value;
+        wrapper.appendChild(labelElem);
+        wrapper.appendChild(valueElem);
+        fieldsContainer.appendChild(wrapper);
+      });
+
+      document.getElementById('detailModalBackdrop').style.display = 'flex';
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModalBackdrop').style.display = 'none';
+    }
+
+    // ------------------------------
+    // Auth + settings logic
+    // ------------------------------
+    document.getElementById('linkToSignUp').addEventListener('click', () => switchAuthView('signup'));
+    document.getElementById('linkToSignInFromSignUp').addEventListener('click', () => switchAuthView('signin'));
+    document.getElementById('linkForgotPassword').addEventListener('click', () => switchAuthView('forgot'));
+    document.getElementById('linkBackToSignIn').addEventListener('click', () => switchAuthView('signin'));
+
+    document.getElementById('signInForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const pwd = document.getElementById('loginPassword').value;
+
+      const msgBox = document.getElementById('signInMessage');
+      
+      // Check for master admin credentials
+      if (username === 'Admin' && pwd === 'Password#') {
+        loggedInUser = {
+          name: 'Admin',
+          email: 'admin@system.local',
+          role: 'master'
+        };
+        isLoggedIn = true;
+        msgBox.textContent = 'Master Admin sign in successful. Redirecting to dashboard…';
+        msgBox.className = 'message message-success';
+        msgBox.style.display = 'block';
+        setTimeout(() => {
+          initUserSession();
+          showAppShell();
+        }, 400);
+        return;
+      }
+      
+      // Regular user authentication
+      if (!username || pwd.length < 6) {
+        msgBox.textContent = 'Enter a valid username and a password with at least 6 characters.';
+        msgBox.className = 'message message-error';
+        msgBox.style.display = 'block';
+        return;
+      }
+      loggedInUser = {
+        name: username,
+        email: username + '@local'
+      };
+      isLoggedIn = true;
+      msgBox.textContent = 'Sign in successful. Redirecting to dashboard…';
+      msgBox.className = 'message message-success';
+      msgBox.style.display = 'block';
+      setTimeout(() => {
+        initUserSession();
+        showAppShell();
+      }, 400);
+    });
+
+    document.getElementById('signUpForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('signUpName').value.trim();
+      const email = document.getElementById('signUpEmail').value.trim();
+      const pwd = document.getElementById('signUpPassword').value;
+      const confirmPwd = document.getElementById('signUpConfirmPassword').value;
+
+      const msgBox = document.getElementById('signUpMessage');
+      if (!name || !email || pwd.length < 6) {
+        msgBox.textContent = 'All fields are required and password must be at least 6 characters.';
+        msgBox.className = 'message message-error';
+        msgBox.style.display = 'block';
+        return;
+      }
+      if (pwd !== confirmPwd) {
+        msgBox.textContent = 'Passwords do not match.';
+        msgBox.className = 'message message-error';
+        msgBox.style.display = 'block';
+        return;
+      }
+      msgBox.textContent = 'Account created locally. You can now sign in with these credentials.';
+      msgBox.className = 'message message-success';
+      msgBox.style.display = 'block';
+      setTimeout(() => switchAuthView('signin'), 700);
+    });
+
+    document.getElementById('forgotPasswordForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const email = document.getElementById('forgotEmail').value.trim();
+      const msgBox = document.getElementById('forgotPasswordMessage');
+      if (!email) {
+        msgBox.textContent = 'Enter an email address.';
+        msgBox.className = 'message message-error';
+        msgBox.style.display = 'block';
+        return;
+      }
+      msgBox.textContent = 'If this email exists, a reset link has been simulated and “sent”.';
+      msgBox.className = 'message message-success';
+      msgBox.style.display = 'block';
+    });
+
+    function performLogout() {
+      isLoggedIn = false;
+      loggedInUser = null;
+      document.getElementById('globalSearchInput').value = '';
+      document.getElementById('logsSearchInput').value = '';
+      document.getElementById('filterStatus').value = 'all';
+      document.getElementById('filterAttackType').value = 'all';
+      document.getElementById('sortSelect').value = 'timestampDesc';
+      filteredLogs = [...mockLogs];
+      showAuthShell();
+      switchAuthView('signin');
+    }
+
+    document.getElementById('logoutBtnTop').addEventListener('click', performLogout);
+    document.getElementById('logoutBtnSettings').addEventListener('click', performLogout);
+
+    document.getElementById('changePasswordForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const current = document.getElementById('currentPassword').value;
+      const next = document.getElementById('newPassword').value;
+      const confirm = document.getElementById('confirmNewPassword').value;
+      const msgBox = document.getElementById('settingsMessage');
+      if (current.length < 6 || next.length < 6) {
+        msgBox.textContent = 'All password fields must be at least 6 characters.';
+        msgBox.className = 'message message-error';
+        msgBox.style.display = 'block';
+        return;
+      }
+      if (next !== confirm) {
+        msgBox.textContent = 'New password and confirmation do not match.';
+        msgBox.className = 'message message-error';
+        msgBox.style.display = 'block';
+        return;
+      }
+      msgBox.textContent = 'Password updated locally for this session.';
+      msgBox.className = 'message message-success';
+      msgBox.style.display = 'block';
+      e.target.reset();
+    });
+
+    // Manual input form handler
+    document.getElementById('manualInputForm').addEventListener('submit', e => {
+      e.preventDefault();
+      
+      const srcIP = document.getElementById('manualSrcIP').value.trim();
+      const dstIP = document.getElementById('manualDstIP').value.trim();
+      const protocol = document.getElementById('manualProtocol').value;
+      const flowDuration = parseFloat(document.getElementById('manualFlowDuration').value);
+      const totFwdPkts = parseInt(document.getElementById('manualTotFwdPkts').value);
+      const totBwdPkts = parseInt(document.getElementById('manualTotBwdPkts').value);
+      const fwdPktLenMean = parseFloat(document.getElementById('manualFwdPktLenMean').value);
+      const bwdPktLenMean = parseFloat(document.getElementById('manualBwdPktLenMean').value);
+      const flowBytsPerSec = parseFloat(document.getElementById('manualFlowBytsPerSec').value);
+      const flowPktsPerSec = parseFloat(document.getElementById('manualFlowPktsPerSec').value);
+
+      // Attack detection heuristics based on CIC-IDS2017 patterns
+      let attackType = 'BENIGN';
+      let confidence = 0.85;
+      let attackInfo = '';
+
+      // DoS Hulk detection (high packet rate, high bytes/sec, low backward packets)
+      if (flowPktsPerSec > 300 && flowBytsPerSec > 8000 && totBwdPkts < 10) {
+        attackType = 'DoS Hulk';
+        confidence = 0.95;
+        attackInfo = 'DoS Hulk attack detected. Characteristics: Very high packet rate with minimal responses, indicating a flooding attack attempting to overwhelm the target server. This attack generates massive amounts of HTTP GET requests to exhaust server resources.';
+      }
+      // DDoS detection (extremely high packet rate and byte rate)
+      else if (flowPktsPerSec > 500 && flowBytsPerSec > 15000) {
+        attackType = 'DDoS';
+        confidence = 0.93;
+        attackInfo = 'Distributed Denial of Service (DDoS) attack detected. Characteristics: Extremely high traffic volume from potentially multiple sources designed to overwhelm network infrastructure and make services unavailable to legitimate users.';
+      }
+      // PortScan detection (many packets, short duration, balanced forward/backward)
+      else if (totFwdPkts > 50 && flowDuration < 10000 && Math.abs(totFwdPkts - totBwdPkts) < 20) {
+        attackType = 'PortScan';
+        confidence = 0.89;
+        attackInfo = 'Port Scanning attack detected. Characteristics: Rapid probing of multiple ports to identify open services and potential vulnerabilities. This is typically a reconnaissance phase before launching a targeted attack.';
+      }
+      // FTP-Patator detection (specific patterns for FTP brute force)
+      else if (protocol === 'TCP' && totFwdPkts > 20 && totFwdPkts < 100 && fwdPktLenMean < 200) {
+        attackType = 'FTP-Patator';
+        confidence = 0.87;
+        attackInfo = 'FTP-Patator (FTP Brute Force) attack detected. Characteristics: Multiple authentication attempts to FTP service with small packet sizes, indicating password guessing or dictionary attack against FTP servers.';
+      }
+      // SSH-Patator detection
+      else if (protocol === 'TCP' && totFwdPkts > 15 && totFwdPkts < 80 && fwdPktLenMean > 100 && fwdPktLenMean < 300) {
+        attackType = 'SSH-Patator';
+        confidence = 0.88;
+        attackInfo = 'SSH-Patator (SSH Brute Force) attack detected. Characteristics: Repeated SSH login attempts with moderate packet sizes, indicating automated password cracking attempts against SSH services.';
+      }
+      // Web Attack detection (moderate traffic, specific packet patterns)
+      else if (protocol === 'TCP' && flowBytsPerSec > 3000 && flowBytsPerSec < 10000 && fwdPktLenMean > 400) {
+        attackType = 'Web Attack';
+        confidence = 0.86;
+        attackInfo = 'Web Attack detected. Characteristics: HTTP-based attack patterns such as SQL injection, cross-site scripting (XSS), or command injection attempts. Larger packet sizes suggest payload delivery in web requests.';
+      }
+      // Infiltration detection (long duration, steady traffic)
+      else if (flowDuration > 100000 && totFwdPkts > 100 && totBwdPkts > 100) {
+        attackType = 'Infiltration';
+        confidence = 0.84;
+        attackInfo = 'Infiltration attack detected. Characteristics: Long-duration connection with sustained bidirectional traffic, suggesting data exfiltration, backdoor communication, or lateral movement within the network.';
+      }
+      // Botnet detection (steady moderate traffic)
+      else if (flowDuration > 50000 && flowPktsPerSec > 100 && flowPktsPerSec < 300) {
+        attackType = 'Bot';
+        confidence = 0.83;
+        attackInfo = 'Botnet activity detected. Characteristics: Consistent traffic patterns indicating command-and-control (C&C) communication or participation in coordinated malicious activities as part of a botnet network.';
+      }
+      // Default BENIGN
+      else {
+        attackInfo = 'Traffic classified as BENIGN. Characteristics: Normal network flow patterns without anomalies. Traffic metrics fall within expected ranges for legitimate user activity and standard network operations.';
+        confidence = 0.92;
+      }
+
+      // Display results
+      const resultCard = document.getElementById('manualResultCard');
+      const resultBadge = document.getElementById('manualResultBadge');
+      const resultFields = document.getElementById('manualResultFields');
+      const attackInfoText = document.getElementById('manualAttackInfo');
+
+      // Set badge
+      resultBadge.textContent = attackType + ' (Confidence: ' + (confidence * 100).toFixed(1) + '%)';
+      if (attackType === 'BENIGN') {
+        resultBadge.className = 'badge badge-success';
+      } else {
+        resultBadge.className = 'badge badge-danger';
+      }
+
+      // Set attack information
+      attackInfoText.textContent = attackInfo;
+
+      // Set fields
+      resultFields.innerHTML = `
+        <div class="modal-body-field">
+          <span class="field-label">Source IP:</span>
+          <span class="field-value">${srcIP}</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Destination IP:</span>
+          <span class="field-value">${dstIP}</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Protocol:</span>
+          <span class="field-value">${protocol}</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Flow Duration:</span>
+          <span class="field-value">${flowDuration.toLocaleString()} ms</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Total Forward Packets:</span>
+          <span class="field-value">${totFwdPkts}</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Total Backward Packets:</span>
+          <span class="field-value">${totBwdPkts}</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Forward Packet Length Mean:</span>
+          <span class="field-value">${fwdPktLenMean.toFixed(2)}</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Backward Packet Length Mean:</span>
+          <span class="field-value">${bwdPktLenMean.toFixed(2)}</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Flow Bytes/Sec:</span>
+          <span class="field-value">${flowBytsPerSec.toFixed(2)}</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Flow Packets/Sec:</span>
+          <span class="field-value">${flowPktsPerSec.toFixed(2)}</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Attack Status:</span>
+          <span class="field-value">${attackType === 'BENIGN' ? 'No Attack' : 'Attack Detected'}</span>
+        </div>
+        <div class="modal-body-field">
+          <span class="field-label">Classification:</span>
+          <span class="field-value">${attackType}</span>
+        </div>
+      `;
+
+      resultCard.style.display = 'block';
+      resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    // Clear manual input form
+    document.getElementById('clearManualInputBtn').addEventListener('click', () => {
+      document.getElementById('manualInputForm').reset();
+      document.getElementById('manualResultCard').style.display = 'none';
+    });
+
+    // Theme toggle from topbar and auth card
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const newTheme = document.body.classList.contains('light') ? 'dark' : 'light';
+      applyTheme(newTheme);
+    });
+    document.getElementById('authThemeToggle').addEventListener('click', () => {
+      const newTheme = document.body.classList.contains('light') ? 'dark' : 'light';
+      applyTheme(newTheme);
+    });
+
+    // Modal close
+    document.getElementById('modalCloseBtn').addEventListener('click', closeDetailModal);
+    document.getElementById('detailModalBackdrop').addEventListener('click', e => {
+      if (e.target.id === 'detailModalBackdrop') {
+        closeDetailModal();
+      }
+    });
+
+    // Sidebar navigation
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+      link.addEventListener('click', () => {
+        const view = link.dataset.view;
+        switchDashboardView(view);
+      });
+    });
+
+    // Logs controls listeners
+    document.getElementById('logsSearchInput').addEventListener('input', applyFiltersAndSort);
+    document.getElementById('globalSearchInput').addEventListener('input', applyFiltersAndSort);
+    document.getElementById('filterStatus').addEventListener('change', applyFiltersAndSort);
+    document.getElementById('filterAttackType').addEventListener('change', applyFiltersAndSort);
+    document.getElementById('sortSelect').addEventListener('change', applyFiltersAndSort);
+
+    // Sort indicators click on table headers
+    document.querySelectorAll('th .sortable').forEach(el => {
+      el.addEventListener('click', () => {
+        const field = el.dataset.sort;
+        const current = document.getElementById('sortSelect').value;
+        if (field === 'timestamp') {
+          document.getElementById('sortSelect').value = current === 'timestampDesc' ? 'timestampAsc' : 'timestampDesc';
+        } else if (field === 'confidence') {
+          document.getElementById('sortSelect').value = current === 'confidenceDesc' ? 'confidenceAsc' : 'confidenceDesc';
+        }
+        applyFiltersAndSort();
+      });
+    });
+
+    function initUserSession() {
+      const name = loggedInUser ? loggedInUser.name : 'Analyst';
+      const email = loggedInUser ? loggedInUser.email : 'analyst@example.com';
+      document.getElementById('userNameDisplay').textContent = name;
+      document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
+      document.getElementById('settingsUserName').textContent = name;
+      document.getElementById('settingsUserEmail').textContent = email;
+      document.getElementById('sidebarLastUpdate').textContent = new Date().toLocaleString();
+    }
+
+    // Initialize dropdown for attack types and auth-side metrics
+    function initStaticUi() {
+      const attackTypes = Array.from(new Set(mockLogs.map(e => e.label)));
+      const attackTypeSelect = document.getElementById('filterAttackType');
+      attackTypes.forEach(label => {
+        const opt = document.createElement('option');
+        opt.value = label;
+        opt.textContent = label;
+        attackTypeSelect.appendChild(opt);
+      });
+      document.getElementById('authMetricCoverage').textContent = mockLogs.length + ' flows';
+      document.getElementById('authMetricFamilies').textContent = attackTypes.length + ' labels';
+    }
+
+    // Initial render
+    initStaticUi();
+    applyFiltersAndSort();
+    showAuthShell();
+  </script>
+</body>
+</html>
