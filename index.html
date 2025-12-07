@@ -1229,7 +1229,7 @@
         <div class="auth-title">
           <span>Sign in to CICIDS NIDS</span>
         </div>
-        <div class="auth-subtitle">Monitor CIC-IDS2017 style traffic flows and attack detections.</div>
+        <div class="auth-subtitle">An Ensemble Based Machine Learning Approach for Multi-Class Network Intrusion Detection System</div>
         <div id="signInMessage" class="message"></div>
         <form id="signInForm">
           <div class="form-group">
@@ -1314,7 +1314,7 @@
       <div class="auth-side-inner">
         <div class="auth-brand">
           <span class="logo-dot"></span>
-          <span>CICIDS-STYLE NIDS</span>
+          <span>An Ensemble Based Machine Learning Approach for Multi-Class Network Intrusion Detection System</span>
         </div>
         <div class="auth-badge">
           <div class="auth-badge-dot"><div class="auth-badge-dot-inner"></div></div>
@@ -1410,6 +1410,10 @@
         <main class="content">
           <!-- Dashboard home -->
           <section class="content-inner active" id="view-dashboard">
+            <div style="margin-bottom: 32px; padding: 24px; background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(236,72,153,0.08)); border-radius: 12px; border-left: 4px solid var(--primary);">
+              <h2 style="margin: 0 0 8px 0; font-size: 22px; color: var(--text);">An Ensemble Based Machine Learning Approach for Multi-Class Network Intrusion Detection System</h2>
+              <p style="margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.5;">A sophisticated machine learning system that uses ensemble methods to detect and classify multiple types of network intrusions and cyberattacks in real-time.</p>
+            </div>
             <div class="kpi-grid">
               <div class="kpi-card">
                 <div class="kpi-pill">CIC Flow records</div>
@@ -2370,6 +2374,7 @@
     function performLogout() {
       isLoggedIn = false;
       loggedInUser = null;
+      stopRealTimeUpdates(); // Stop real-time updates on logout
       document.getElementById('globalSearchInput').value = '';
       document.getElementById('logsSearchInput').value = '';
       document.getElementById('filterStatus').value = 'all';
@@ -2607,6 +2612,8 @@
       });
     });
 
+    let realTimeUpdateInterval = null;
+
     function initUserSession() {
       const name = loggedInUser ? loggedInUser.name : 'Analyst';
       const email = loggedInUser ? loggedInUser.email : 'analyst@example.com';
@@ -2615,6 +2622,95 @@
       document.getElementById('settingsUserName').textContent = name;
       document.getElementById('settingsUserEmail').textContent = email;
       document.getElementById('sidebarLastUpdate').textContent = new Date().toLocaleString();
+
+      // Start real-time updates
+      startRealTimeUpdates();
+    }
+
+    function startRealTimeUpdates() {
+      // Clear any existing interval
+      if (realTimeUpdateInterval) {
+        clearInterval(realTimeUpdateInterval);
+      }
+
+      // Update every 3 seconds with simulated new data
+      realTimeUpdateInterval = setInterval(() => {
+        // Simulate adding new flow data
+        simulateNewFlowData();
+        applyFiltersAndSort();
+        recomputeKpis();
+        renderLogsTable();
+        updateDashboardMetrics();
+        document.getElementById('sidebarLastUpdate').textContent = new Date().toLocaleString();
+      }, 3000);
+    }
+
+    function stopRealTimeUpdates() {
+      if (realTimeUpdateInterval) {
+        clearInterval(realTimeUpdateInterval);
+        realTimeUpdateInterval = null;
+      }
+    }
+
+    function simulateNewFlowData() {
+      // Generate random new flow data periodically
+      const attackLabels = ['BENIGN', 'DoS Hulk', 'DDoS', 'PortScan', 'FTP-Patator', 'SSH-Patator', 'Web Attack', 'Infiltration', 'Bot'];
+      const protocols = ['TCP', 'UDP', 'ICMP'];
+      
+      const isAttack = Math.random() > 0.6; // 40% attacks, 60% benign
+      const label = isAttack ? attackLabels[Math.floor(Math.random() * (attackLabels.length - 1)) + 1] : 'BENIGN';
+      
+      const newFlow = {
+        id: mockLogs.length + 1,
+        timestamp: new Date().toISOString(),
+        srcIP: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+        dstIP: `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`,
+        protocol: protocols[Math.floor(Math.random() * protocols.length)],
+        flowDuration: Math.floor(Math.random() * 300000) + 1000,
+        totFwdPkts: Math.floor(Math.random() * 500) + 5,
+        totBwdPkts: Math.floor(Math.random() * 500) + 5,
+        fwdPktLenMean: Math.random() * 1000 + 50,
+        bwdPktLenMean: Math.random() * 1000 + 50,
+        flowBytsPerSec: Math.random() * 50000 + 100,
+        flowPktsPerSec: Math.random() * 1000 + 50,
+        flagFIN: Math.floor(Math.random() * 2),
+        flagSYN: Math.floor(Math.random() * 2),
+        flagRST: Math.floor(Math.random() * 2),
+        flagACK: Math.floor(Math.random() * 2),
+        label: label,
+        status: isAttack ? 'attack' : 'benign',
+        confidence: 0.75 + Math.random() * 0.25
+      };
+      
+      mockLogs.push(newFlow);
+
+      // Keep only last 1000 logs to prevent memory bloat
+      if (mockLogs.length > 1000) {
+        mockLogs.shift();
+      }
+    }
+
+    function updateDashboardMetrics() {
+      // Update any additional dashboard metrics if needed
+      const today = new Date().toISOString().slice(0, 10);
+      const todayAttacks = mockLogs.filter(a => a.timestamp.slice(0, 10) === today && a.status === 'attack');
+      
+      // Add subtle animations to updated metrics
+      const updateElements = [
+        'kpiTotalRequests', 'kpiTotalAttacks', 'kpiAttackRatio', 
+        'kpiNoAttackPercent', 'kpiTopAttack', 'attacksTodayValue'
+      ];
+      
+      updateElements.forEach(elementId => {
+        const el = document.getElementById(elementId);
+        if (el) {
+          el.style.transition = 'color 0.3s ease';
+          el.style.color = 'var(--primary)';
+          setTimeout(() => {
+            el.style.color = 'var(--text)';
+          }, 300);
+        }
+      });
     }
 
     // Initialize dropdown for attack types and auth-side metrics
