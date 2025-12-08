@@ -1574,6 +1574,26 @@
                 </div>
               </div>
               <div style="padding: 24px;">
+                <div class="form-row" style="margin-bottom: 10px; align-items: flex-end;">
+                  <div class="form-group" style="flex: 1;">
+                    <label class="form-label" for="manualSample">Load sample scenario (matches notebook)</label>
+                    <select class="form-input" id="manualSample">
+                      <option value="">-- choose sample --</option>
+                      <option value="DoS Hulk">DoS Hulk</option>
+                      <option value="DDoS">DDoS</option>
+                      <option value="PortScan">PortScan</option>
+                      <option value="FTP-Patator">FTP-Patator</option>
+                      <option value="SSH-Patator">SSH-Patator</option>
+                      <option value="Web Attack">Web Attack</option>
+                      <option value="Infiltration">Infiltration</option>
+                      <option value="Bot">Bot</option>
+                      <option value="Benign">Benign</option>
+                    </select>
+                  </div>
+                  <div>
+                    <button type="button" class="btn-ghost" id="loadManualSampleBtn" style="white-space: nowrap;">Load Sample</button>
+                  </div>
+                </div>
                 <form id="manualInputForm">
                   <div class="form-row">
                     <div class="form-group">
@@ -2413,6 +2433,38 @@
     });
 
     // Manual input form handler
+    const manualSamples = {
+      'DoS Hulk': {srcIP:'192.168.1.10', dstIP:'10.0.0.5', protocol:'TCP', flowDuration:5000, totFwdPkts:400, totBwdPkts:5, fwdPktLenMean:500.0, bwdPktLenMean:50.0, flowBytsPerSec:12000.0, flowPktsPerSec:350.0},
+      'DDoS': {srcIP:'192.168.1.11', dstIP:'10.0.0.5', protocol:'UDP', flowDuration:3000, totFwdPkts:900, totBwdPkts:20, fwdPktLenMean:600.0, bwdPktLenMean:60.0, flowBytsPerSec:20000.0, flowPktsPerSec:800.0},
+      'PortScan': {srcIP:'192.168.1.12', dstIP:'10.0.0.5', protocol:'TCP', flowDuration:8000, totFwdPkts:80, totBwdPkts:70, fwdPktLenMean:150.0, bwdPktLenMean:140.0, flowBytsPerSec:2000.0, flowPktsPerSec:120.0},
+      'FTP-Patator': {srcIP:'192.168.1.13', dstIP:'10.0.0.21', protocol:'TCP', flowDuration:20000, totFwdPkts:40, totBwdPkts:15, fwdPktLenMean:180.0, bwdPktLenMean:160.0, flowBytsPerSec:2500.0, flowPktsPerSec:90.0},
+      'SSH-Patator': {srcIP:'192.168.1.14', dstIP:'10.0.0.22', protocol:'TCP', flowDuration:25000, totFwdPkts:50, totBwdPkts:20, fwdPktLenMean:180.0, bwdPktLenMean:170.0, flowBytsPerSec:2600.0, flowPktsPerSec:95.0},
+      'Web Attack': {srcIP:'192.168.1.15', dstIP:'10.0.0.80', protocol:'TCP', flowDuration:40000, totFwdPkts:150, totBwdPkts:40, fwdPktLenMean:500.0, bwdPktLenMean:200.0, flowBytsPerSec:6000.0, flowPktsPerSec:180.0},
+      'Infiltration': {srcIP:'192.168.1.16', dstIP:'10.0.0.90', protocol:'TCP', flowDuration:150000, totFwdPkts:200, totBwdPkts:180, fwdPktLenMean:300.0, bwdPktLenMean:280.0, flowBytsPerSec:4000.0, flowPktsPerSec:150.0},
+      'Bot': {srcIP:'192.168.1.17', dstIP:'10.0.0.95', protocol:'UDP', flowDuration:80000, totFwdPkts:120, totBwdPkts:60, fwdPktLenMean:220.0, bwdPktLenMean:180.0, flowBytsPerSec:5000.0, flowPktsPerSec:180.0},
+      'Benign': {srcIP:'192.168.1.18', dstIP:'10.0.0.100', protocol:'TCP', flowDuration:30000, totFwdPkts:30, totBwdPkts:25, fwdPktLenMean:250.0, bwdPktLenMean:240.0, flowBytsPerSec:2000.0, flowPktsPerSec:80.0},
+    };
+
+    const loadSample = (name) => {
+      const s = manualSamples[name];
+      if (!s) return;
+      document.getElementById('manualSrcIP').value = s.srcIP;
+      document.getElementById('manualDstIP').value = s.dstIP;
+      document.getElementById('manualProtocol').value = s.protocol;
+      document.getElementById('manualFlowDuration').value = s.flowDuration;
+      document.getElementById('manualTotFwdPkts').value = s.totFwdPkts;
+      document.getElementById('manualTotBwdPkts').value = s.totBwdPkts;
+      document.getElementById('manualFwdPktLenMean').value = s.fwdPktLenMean;
+      document.getElementById('manualBwdPktLenMean').value = s.bwdPktLenMean;
+      document.getElementById('manualFlowBytsPerSec').value = s.flowBytsPerSec;
+      document.getElementById('manualFlowPktsPerSec').value = s.flowPktsPerSec;
+    };
+
+    document.getElementById('loadManualSampleBtn').addEventListener('click', () => {
+      const sel = document.getElementById('manualSample').value;
+      loadSample(sel);
+    });
+
     document.getElementById('manualInputForm').addEventListener('submit', e => {
       e.preventDefault();
       
